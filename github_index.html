@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>배움숲 강의제안서 생성기</title>
+<script src="https://unpkg.com/docx@8.5.0/build/index.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'맑은 고딕',sans-serif;font-size:14px;padding:24px;background:#f8faf9;color:#222;max-width:800px;margin:0 auto}
+h1{font-size:16px;font-weight:700;color:#2d6a4f;margin-bottom:6px}
+.sub{font-size:12px;color:#888;margin-bottom:20px}
+.hint{background:#f0f7f4;border:1px solid #b2d8c8;border-radius:6px;padding:10px 14px;font-size:13px;color:#1b4332;line-height:1.7;margin-bottom:16px}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
+.sec{margin-bottom:12px}
+label{display:block;font-size:12px;color:#555;margin-bottom:4px;font-weight:600}
+input,textarea,select{width:100%;padding:9px 11px;font-size:13px;border:1px solid #ccc;border-radius:6px;color:#222;background:#fff;font-family:'맑은 고딕',sans-serif}
+textarea{resize:vertical;line-height:1.6}
+.btns{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.btn{padding:9px 18px;font-size:13px;border-radius:6px;cursor:pointer;border:1px solid #bbb;background:#fff;color:#333;font-family:'맑은 고딕',sans-serif;transition:background .15s}
+.btn:hover{background:#f0f0f0}
+.green{background:#2d6a4f;color:#fff;border-color:#2d6a4f;font-weight:700}
+.green:hover{background:#1b4332}
+.blue{background:#1a6fb5;color:#fff;border-color:#1a6fb5;font-weight:700}
+.blue:hover{background:#145a91}
+.red-btn{color:#b00;border-color:#e0a0a0;font-size:12px;padding:5px 10px}
+.red-btn:disabled{opacity:.35;cursor:default}
+hr{border:none;border-top:1px solid #e0e0e0;margin:16px 0}
+.card{background:#fff;border:1px solid #ddd;border-radius:8px;padding:14px;margin-bottom:10px}
+.card-hd{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.num{font-size:13px;font-weight:700;color:#2d6a4f}
+.tabs{display:flex;gap:8px;margin-bottom:18px}
+.tab{padding:8px 20px;border-radius:20px;border:1px solid #bbb;cursor:pointer;font-size:13px;color:#666;background:#fff;transition:all .15s}
+.tab.on{background:#2d6a4f;color:#fff;border-color:#2d6a4f;font-weight:700}
+.modal-bg{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.55);z-index:100;align-items:center;justify-content:center}
+.modal-bg.show{display:flex}
+.modal{background:#fff;border-radius:12px;padding:22px;width:92%;max-width:520px;box-shadow:0 6px 24px rgba(0,0,0,0.2)}
+.modal-title{font-size:14px;font-weight:700;color:#2d6a4f;margin-bottom:8px}
+.modal-desc{font-size:12px;color:#555;margin-bottom:10px;line-height:1.6}
+.modal-ta{width:100%;height:130px;font-size:12px;border:1px solid #ccc;border-radius:6px;padding:8px;color:#222;background:#f8faf9;font-family:'맑은 고딕',sans-serif;resize:none}
+.modal-btns{display:flex;gap:8px;margin-top:12px;justify-content:flex-end}
+.pv{border:1px solid #aaa;border-radius:8px;padding:20px;background:#fff}
+.pv-logo{font-size:12px;color:#2d6a4f;font-weight:700;margin-bottom:8px}
+.pv-title{text-align:center;font-size:18px;font-weight:700;letter-spacing:5px;margin-bottom:16px}
+.pvtable{width:100%;border-collapse:collapse;font-size:12px}
+.pvtable td{border:1px solid #888;padding:7px 9px;vertical-align:top}
+.th{background:#f2f2f2;font-weight:700;text-align:center;width:78px}
+.sh{background:#f2f2f2;font-weight:700;text-align:center}
+.fn{font-size:11px;color:#666;margin-top:10px;line-height:1.9}
+#toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#2d6a4f;color:#fff;padding:11px 22px;border-radius:22px;font-size:13px;display:none;z-index:200;box-shadow:0 2px 10px rgba(0,0,0,0.2)}
+@media(max-width:600px){.row2{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<div id="toast"></div>
+
+<div class="modal-bg" id="modal">
+  <div class="modal">
+    <div class="modal-title" id="modal_title">📋 채팅창에 붙여넣기 하세요</div>
+    <div class="modal-desc">아래 내용을 복사 후 채팅창에 붙여넣기(Ctrl+V) 하고 전송하세요.</div>
+    <textarea class="modal-ta" id="modal_ta" readonly onclick="this.select()"></textarea>
+    <div class="modal-btns">
+      <button class="btn green" onclick="tryCopy()">📋 복사하기</button>
+      <button class="btn" onclick="closeModal()">닫기</button>
+    </div>
+  </div>
+</div>
+
+<h1>🌿 배움숲협동조합 강의제안서 생성기</h1>
+<p class="sub">AI 자동 생성 + Word(.docx) 다운로드</p>
+
+<div class="tabs">
+  <div class="tab on" id="t1" onclick="goTab(1)">✏️ 입력</div>
+  <div class="tab" id="t2" onclick="goTab(2)">👁 미리보기</div>
+</div>
+
+<div id="p1">
+  <div class="hint">
+    강의명·대상 입력 후 <b>AI로 자동 생성 📋</b> → 복사 → Claude 채팅에 붙여넣기 → 생성된 내용을 아래 칸에 입력<br>
+    완성 후 <b>⬇ Word 다운로드</b>로 .docx 파일 저장!
+  </div>
+  <div class="row2">
+    <div><label>강의명 *</label><input id="v_title" placeholder="예: 취업준비를 위한 생성형 AI 기초"></div>
+    <div><label>교육 대상 *</label><input id="v_target" placeholder="예: 일반, 중장년층"></div>
+  </div>
+  <div class="row2">
+    <div><label>총 차시</label>
+      <select id="v_n">
+        <option value="1">1차시</option><option value="2" selected>2차시</option>
+        <option value="3">3차시</option><option value="4">4차시</option><option value="5">5차시</option>
+      </select>
+    </div>
+    <div><label>차시당 시간</label>
+      <select id="v_time">
+        <option>1시간</option><option>1.5시간</option><option selected>2시간</option><option>3시간</option>
+      </select>
+    </div>
+  </div>
+  <div class="sec"><label>추가 요청 (선택)</label><textarea id="v_extra" rows="2" placeholder="예: 실습 위주, 스마트폰 앱 중심..."></textarea></div>
+  <div class="btns">
+    <button class="btn green" onclick="doGen()">AI로 자동 생성 📋</button>
+    <button class="btn" onclick="doReset()">초기화</button>
+  </div>
+  <hr>
+  <p style="font-size:13px;font-weight:700;margin-bottom:12px">내용 편집</p>
+  <div class="sec"><label>강의 목표</label><textarea id="v_goal" rows="3" placeholder="AI가 생성한 내용을 붙여넣거나 직접 작성하세요"></textarea></div>
+  <div class="sec"><label>기대 효과</label><textarea id="v_effect" rows="3" placeholder="AI가 생성한 내용을 붙여넣거나 직접 작성하세요"></textarea></div>
+  <div id="sess_wrap"></div>
+  <button class="btn" style="margin-bottom:14px" onclick="addSess()">+ 차시 추가</button>
+  <hr>
+  <div class="sec"><label>특이사항 · 요청사항</label><textarea id="v_special" rows="2"></textarea></div>
+  <div class="btns">
+    <button class="btn green" onclick="goTab(2)">미리보기 ▶</button>
+    <button class="btn blue" onclick="doDownload()">⬇ Word 다운로드</button>
+  </div>
+</div>
+
+<div id="p2" style="display:none">
+  <div class="pv">
+    <div class="pv-logo">배움숲협동조합</div>
+    <div class="pv-title">강 의 제 안 서</div>
+    <table class="pvtable">
+      <tr><td colspan="3" style="text-align:center;font-size:14px;font-weight:700" id="pv_title">—</td></tr>
+      <tr><td class="th">강의 목표</td><td colspan="2" id="pv_goal" style="white-space:pre-wrap">—</td></tr>
+      <tr><td class="th">기대 효과</td><td colspan="2" id="pv_effect" style="white-space:pre-wrap">—</td></tr>
+      <tr><td colspan="3" class="sh">강의 커리큘럼</td></tr>
+      <tr><td class="sh" style="width:44px">차시</td><td class="sh" style="width:130px">강의 주제</td><td class="sh">주요내용</td></tr>
+      <tbody id="pv_sess"></tbody>
+      <tr><td class="th" rowspan="3">운영<br>유의사항</td><td colspan="2">• PC, 노트북, 태블릿, 스마트폰 (실습형 강의의 경우)</td></tr>
+      <tr><td colspan="2">• 인터넷 연결 환경</td></tr>
+      <tr><td colspan="2">• 빔프로젝터 및 화면 공유 장비(HDMI선)</td></tr>
+      <tr><td class="th">특이사항<br>요청사항</td><td colspan="2" id="pv_special">•</td></tr>
+    </table>
+    <div class="fn">
+      * 상세 커리큘럼은 상황에 따라 변동될 수 있습니다.<br>
+      * 배움숲협동조합은 디지털 및 AI 전문 강사진으로 구성되어 있습니다.<br>
+      * 강연 의뢰 및 교육 문의: eduforestco@gmail.com
+    </div>
+  </div>
+  <div class="btns" style="margin-top:14px">
+    <button class="btn" onclick="goTab(1)">← 편집으로</button>
+    <button class="btn blue" onclick="doDownload()">⬇ Word 다운로드</button>
+  </div>
+</div>
+
+<script>
+var sess = [];
+
+function goTab(n) {
+  document.getElementById('t1').className = 'tab'+(n==1?' on':'');
+  document.getElementById('t2').className = 'tab'+(n==2?' on':'');
+  document.getElementById('p1').style.display = n==1?'block':'none';
+  document.getElementById('p2').style.display = n==2?'block':'none';
+  if (n==2) renderPv();
+}
+
+function initSess(n) {
+  sess = [];
+  for (var i=0;i<n;i++) sess.push({s:'',c:''});
+  renderSess();
+}
+
+function renderSess() {
+  var w = document.getElementById('sess_wrap');
+  w.innerHTML = '';
+  for (var i=0;i<sess.length;i++) {
+    (function(idx){
+      var d = document.createElement('div');
+      d.className = 'card';
+      d.innerHTML = '<div class="card-hd"><span class="num">'+(idx+1)+'차시</span>'
+        +'<button class="btn red-btn"'+(sess.length<=1?' disabled':'')+' onclick="delSess('+idx+')">삭제</button></div>'
+        +'<div class="sec"><label>강의 주제</label>'
+        +'<input type="text" value="'+esc(sess[idx].s)+'" placeholder="강의 주제" oninput="sess['+idx+'].s=this.value"></div>'
+        +'<div><label>주요내용</label>'
+        +'<textarea rows="4" placeholder="주요 내용" oninput="sess['+idx+'].c=this.value">'+esc(sess[idx].c)+'</textarea></div>';
+      w.appendChild(d);
+    })(i);
+  }
+}
+
+function esc(s){return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function addSess(){sess.push({s:'',c:''});renderSess();}
+function delSess(i){if(sess.length<=1)return;sess.splice(i,1);renderSess();}
+
+function doReset(){
+  ['v_title','v_target','v_goal','v_effect','v_extra','v_special'].forEach(function(id){document.getElementById(id).value='';});
+  document.getElementById('v_n').value='2';
+  document.getElementById('v_time').value='2시간';
+  initSess(2);
+}
+
+function openModal(msg,title){
+  document.getElementById('modal_title').textContent=title||'📋 채팅창에 붙여넣기 하세요';
+  document.getElementById('modal_ta').value=msg;
+  document.getElementById('modal').classList.add('show');
+  setTimeout(function(){document.getElementById('modal_ta').select();},100);
+}
+function closeModal(){document.getElementById('modal').classList.remove('show');}
+function tryCopy(){
+  var ta=document.getElementById('modal_ta');
+  ta.select();
+  try{document.execCommand('copy');document.getElementById('modal_title').textContent='✅ 복사 완료! 채팅창에 Ctrl+V 하세요';}
+  catch(e){alert('직접 Ctrl+A → Ctrl+C 로 복사하세요');}
+}
+
+function buildMsg(){
+  var title=document.getElementById('v_title').value.trim();
+  var target=document.getElementById('v_target').value.trim();
+  var n=document.getElementById('v_n').value;
+  var time=document.getElementById('v_time').value;
+  var extra=document.getElementById('v_extra').value.trim();
+  return '배움숲협동조합 강의제안서를 작성해줘.\n강의명: '+title+'\n교육 대상: '+target
+    +'\n총 차시: '+n+'차시 (차시당 '+time+')\n'+(extra?'추가 요청: '+extra+'\n':'')
+    +'\n아래 형식으로 작성해줘:\n1. 강의 목표 (2~3문장)\n2. 기대 효과 (• 항목 3가지)\n'
+    +'3. 차시별 강의 주제와 주요내용 ('+n+'차시, 각 3~5줄)\n4. 특이사항·요청사항';
+}
+
+function doGen(){
+  var title=document.getElementById('v_title').value.trim();
+  var target=document.getElementById('v_target').value.trim();
+  if(!title||!target){alert('강의명과 교육 대상을 입력해주세요.');return;}
+  openModal(buildMsg(),'📋 아래 내용을 복사 후 Claude 채팅에 붙여넣으세요');
+}
+
+function renderPv(){
+  document.getElementById('pv_title').textContent=document.getElementById('v_title').value||'(강의명 없음)';
+  document.getElementById('pv_goal').textContent=document.getElementById('v_goal').value||'—';
+  document.getElementById('pv_effect').textContent=document.getElementById('v_effect').value||'—';
+  document.getElementById('pv_special').textContent=document.getElementById('v_special').value||'•';
+  var tb=document.getElementById('pv_sess');
+  tb.innerHTML='';
+  for(var i=0;i<sess.length;i++){
+    var tr=document.createElement('tr');
+    tr.innerHTML='<td style="text-align:center">'+(i+1)+'</td>'
+      +'<td>'+esc(sess[i].s||'—')+'</td>'
+      +'<td style="white-space:pre-wrap">'+esc(sess[i].c||'—')+'</td>';
+    tb.appendChild(tr);
+  }
+}
+
+function showToast(msg){
+  var t=document.getElementById('toast');
+  t.textContent=msg;t.style.display='block';
+  setTimeout(function(){t.style.display='none';},2800);
+}
+
+function makeParas(txt) {
+  return (txt||'').split('\n').map(function(line){
+    return new docx.Paragraph({
+      children:[new docx.TextRun({text:line,size:22,font:'맑은 고딕'})]
+    });
+  });
+}
+
+function makeHCell(txt, rowSpan) {
+  return new docx.TableCell({
+    rowSpan: rowSpan||1,
+    shading:{type:docx.ShadingType.SOLID,color:'F2F2F2'},
+    children:[new docx.Paragraph({
+      alignment:docx.AlignmentType.CENTER,
+      children:[new docx.TextRun({text:txt,bold:true,size:22,font:'맑은 고딕'})]
+    })]
+  });
+}
+
+function makeCell(txt, colSpan) {
+  return new docx.TableCell({
+    columnSpan:colSpan||1,
+    children:makeParas(txt)
+  });
+}
+
+function doDownload(){
+  var title=document.getElementById('v_title').value.trim()||'강의제안서';
+  var goal=document.getElementById('v_goal').value.trim()||'(미입력)';
+  var effect=document.getElementById('v_effect').value.trim()||'(미입력)';
+  var special=document.getElementById('v_special').value.trim()||'없음';
+
+  var rows=[];
+
+  // 강의명
+  rows.push(new docx.TableRow({children:[new docx.TableCell({columnSpan:3,
+    children:[new docx.Paragraph({alignment:docx.AlignmentType.CENTER,
+      children:[new docx.TextRun({text:title,bold:true,size:28,font:'맑은 고딕'})]
+    })]
+  })]}));
+
+  // 강의 목표 / 기대 효과
+  rows.push(new docx.TableRow({children:[makeHCell('강의 목표'), makeCell(goal,2)]}));
+  rows.push(new docx.TableRow({children:[makeHCell('기대 효과'), makeCell(effect,2)]}));
+
+  // 커리큘럼 헤더
+  rows.push(new docx.TableRow({children:[new docx.TableCell({columnSpan:3,
+    shading:{type:docx.ShadingType.SOLID,color:'F2F2F2'},
+    children:[new docx.Paragraph({alignment:docx.AlignmentType.CENTER,
+      children:[new docx.TextRun({text:'강의 커리큘럼',bold:true,size:22,font:'맑은 고딕'})]
+    })]
+  })]}));
+  rows.push(new docx.TableRow({children:[makeHCell('차시'), makeHCell('강의 주제'), makeHCell('주요내용')]}));
+
+  // 차시별
+  for(var i=0;i<sess.length;i++){
+    rows.push(new docx.TableRow({children:[
+      new docx.TableCell({children:[new docx.Paragraph({alignment:docx.AlignmentType.CENTER,
+        children:[new docx.TextRun({text:String(i+1),size:22,font:'맑은 고딕'})]})]}),
+      makeCell(sess[i].s||'—',1),
+      makeCell(sess[i].c||'—',1)
+    ]}));
+  }
+
+  // 운영 유의사항
+  rows.push(new docx.TableRow({children:[
+    makeHCell('운영\n유의사항',3),
+    makeCell('• PC, 노트북, 태블릿, 스마트폰 (실습형 강의의 경우)',2)
+  ]}));
+  rows.push(new docx.TableRow({children:[makeCell('• 인터넷 연결 환경',2)]}));
+  rows.push(new docx.TableRow({children:[makeCell('• 빔프로젝터 및 화면 공유 장비(HDMI선)',2)]}));
+
+  // 특이사항
+  rows.push(new docx.TableRow({children:[makeHCell('특이사항\n요청사항'), makeCell(special,2)]}));
+
+  var table=new docx.Table({
+    width:{size:100,type:docx.WidthType.PERCENTAGE},
+    rows:rows
+  });
+
+  var doc=new docx.Document({sections:[{children:[
+    new docx.Paragraph({alignment:docx.AlignmentType.CENTER,spacing:{after:300},
+      children:[new docx.TextRun({text:'강  의  제  안  서',bold:true,size:38,font:'맑은 고딕'})]}),
+    table,
+    new docx.Paragraph({spacing:{before:200},children:[new docx.TextRun({text:''})]}),
+    new docx.Paragraph({children:[new docx.TextRun({text:'* 상세 커리큘럼은 상황에 따라 변동될 수 있습니다.',size:18,font:'맑은 고딕',color:'666666'})]}),
+    new docx.Paragraph({children:[new docx.TextRun({text:'* 배움숲협동조합은 디지털 및 AI 전문 강사진으로 구성되어 있습니다.',size:18,font:'맑은 고딕',color:'666666'})]}),
+    new docx.Paragraph({children:[new docx.TextRun({text:'* 강연 의뢰 및 교육 문의: eduforestco@gmail.com',size:18,font:'맑은 고딕',color:'666666'})]})
+  ]}]});
+
+  docx.Packer.toBlob(doc).then(function(blob){
+    var url=URL.createObjectURL(blob);
+    var a=document.createElement('a');
+    a.href=url;a.download=title+'_배움숲강의제안서.docx';
+    document.body.appendChild(a);a.click();
+    document.body.removeChild(a);URL.revokeObjectURL(url);
+    showToast('✅ Word 파일 다운로드 완료!');
+  }).catch(function(e){
+    alert('오류: '+e.message);
+  });
+}
+
+initSess(2);
+</script>
+</body>
+</html>
